@@ -7,7 +7,7 @@
 #include <errno.h>
 
 TcpClient::TcpClient(const std::string& server_ip, int server_port)
-    : ip(server_ip), port(server_port), sockfd(-1) {
+    : sockfd(-1), ip(server_ip), port(server_port) {
     signal(SIGPIPE, SIG_IGN); // tránh crash khi server ngắt kết nối
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -29,10 +29,28 @@ TcpClient::~TcpClient() {
 }
 
 bool TcpClient::connectToServer() {
-    if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        std::cerr << "Connection failed\n";
+    if (sockfd >= 0) {
+        close(sockfd);  // đóng socket cũ nếu có
+    }
+
+    sockfd = socket(AF_INET, SOCK_STREAM, 0);  // 🔁 tạo socket mới mỗi lần thử
+    if (sockfd < 0) {
+        std::cerr << "Socket creation failed\n";
         return false;
     }
+
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(port);
+    inet_pton(AF_INET, ip.c_str(), &server_addr.sin_addr);
+
+    if (connect(sockfd, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        std::cerr << "Connection failed: " << strerror(errno) << "\n";
+        close(sockfd);
+        sockfd = -1;
+        return false;
+    }
+
     std::cout << "Connected to server\n";
     return true;
 }

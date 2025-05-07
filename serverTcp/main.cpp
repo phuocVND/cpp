@@ -46,7 +46,6 @@ int main(int argc, char *argv[])
     // Main thread có thể thực hiện công việc khác hoặc dừng lại
     std::cout << "Main thread is running." << std::endl;
 
-    // Giữ cho chương trình chạy (vì server đang chạy trong một thread riêng)
     while (true) {
         // Bạn có thể thêm code xử lý công việc khác ở đây, hoặc chỉ cần chờ
         // server tiếp tục lắng nghe kết nối

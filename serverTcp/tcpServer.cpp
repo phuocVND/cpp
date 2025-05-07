@@ -29,12 +29,6 @@ void recv_array(int client_socket, int* arr, size_t size) {
     }
 }
 
-struct MyData {
-    int id;
-    float value;
-    char name[50];
-};
-
 
 void send_struct(int client_socket, const MyData& data) {
     ssize_t bytes_sent = send(client_socket, &data, sizeof(data), 0);
@@ -149,7 +143,7 @@ void TcpServer::handle_client(int client_socket) {
     }
 
     // Đóng kết nối
-    // close(client_socket);
+    close(client_socket);
 }
 
 

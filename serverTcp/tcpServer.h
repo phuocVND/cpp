@@ -5,7 +5,11 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
-
+struct MyData {
+    int id;
+    float value;
+    char name[50];
+};
 class TcpServer {
 public:
     // Khởi tạo server với địa chỉ IP và cổng
