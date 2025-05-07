@@ -40,7 +40,7 @@ class ServerThread {
 
 int main(int argc, char *argv[])
 {
-    ServerThread server_thread("127.0.0.1", 12345);
+    ServerThread server_thread("127.0.0.1", 8080);
     server_thread.run();  // Chạy server trong thread
 
     // Main thread có thể thực hiện công việc khác hoặc dừng lại
@@ -50,7 +50,6 @@ int main(int argc, char *argv[])
     while (true) {
         // Bạn có thể thêm code xử lý công việc khác ở đây, hoặc chỉ cần chờ
         // server tiếp tục lắng nghe kết nối
-        
     }
 
     return 0;

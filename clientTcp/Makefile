@@ -2,7 +2,7 @@ CC = g++
 CFLAGS = -Wall -g
 TARGET = main
 
-SRC = pid.cpp
+SRC = main.cpp tcpClient.cpp
 OBJ = $(SRC:.cpp=.o)
 
 # Target 'all' sẽ phụ thuộc vào các target khác
