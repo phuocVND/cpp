@@ -1,0 +1,169 @@
+{
+	"configurations" : 
+	[
+		{
+			"directories" : 
+			[
+				{
+					"build" : ".",
+					"hasInstallRule" : true,
+					"jsonFile" : "directory-.-Debug-ff2e5f037824794eda01.json",
+					"minimumCMakeVersion" : 
+					{
+						"string" : "3.16"
+					},
+					"projectIndex" : 0,
+					"source" : ".",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12
+					]
+				}
+			],
+			"name" : "Debug",
+			"projects" : 
+			[
+				{
+					"directoryIndexes" : 
+					[
+						0
+					],
+					"name" : "tcpserver",
+					"targetIndexes" : 
+					[
+						0,
+						1,
+						2,
+						3,
+						4,
+						5,
+						6,
+						7,
+						8,
+						9,
+						10,
+						11,
+						12
+					]
+				}
+			],
+			"targets" : 
+			[
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint-Debug-6130a63bf942e0c0bb24.json",
+					"name" : "all_qmllint",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint_json::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint_json-Debug-c8461333f6f9bdd90b9d.json",
+					"name" : "all_qmllint_json",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmllint_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmllint_module-Debug-b3c03e81687f67bbc750.json",
+					"name" : "all_qmllint_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "all_qmltyperegistrations::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-all_qmltyperegistrations-Debug-1d74dc24165dd3ae044a.json",
+					"name" : "all_qmltyperegistrations",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver-Debug-5274695c256a8aea440b.json",
+					"name" : "apptcpserver",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_autogen::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_autogen-Debug-f3b2ee53905fb037bc72.json",
+					"name" : "apptcpserver_autogen",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_autogen_timestamp_deps::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_autogen_timestamp_deps-Debug-77c238304d7a841c6b90.json",
+					"name" : "apptcpserver_autogen_timestamp_deps",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_qmlimportscan::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_qmlimportscan-Debug-66634baf82c072bf8ed0.json",
+					"name" : "apptcpserver_qmlimportscan",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_qmllint::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_qmllint-Debug-2ee684484ebd4c060a22.json",
+					"name" : "apptcpserver_qmllint",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_qmllint_json::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_qmllint_json-Debug-cd82499123ebaaf11561.json",
+					"name" : "apptcpserver_qmllint_json",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_qmllint_module::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_qmllint_module-Debug-2568bb5575ee37485718.json",
+					"name" : "apptcpserver_qmllint_module",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_qmltyperegistration::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_qmltyperegistration-Debug-311bcfff07cf05fc1703.json",
+					"name" : "apptcpserver_qmltyperegistration",
+					"projectIndex" : 0
+				},
+				{
+					"directoryIndex" : 0,
+					"id" : "apptcpserver_tooling::@6890427a1f51a3e7e1df",
+					"jsonFile" : "target-apptcpserver_tooling-Debug-a1b1c24531352fa8db44.json",
+					"name" : "apptcpserver_tooling",
+					"projectIndex" : 0
+				}
+			]
+		}
+	],
+	"kind" : "codemodel",
+	"paths" : 
+	{
+		"build" : "/Users/admin/Desktop/tcpserver/build/Qt_6_7_3_for_macOS-Debug",
+		"source" : "/Users/admin/Desktop/tcpserver"
+	},
+	"version" : 
+	{
+		"major" : 2,
+		"minor" : 7
+	}
+}

@@ -1,0 +1,6 @@
+<RCC>
+  <qresource prefix="/qt/qml/tcpserver/">
+    <file alias="Main.qml">/Users/admin/Desktop/tcpserver/Main.qml</file>
+  </qresource>
+</RCC>
+
