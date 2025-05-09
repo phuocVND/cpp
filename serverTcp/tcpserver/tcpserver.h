@@ -5,6 +5,8 @@
 #include <string>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <parameter.h>
+
 struct MyData {
     int id;
     float value;
@@ -12,18 +14,17 @@ struct MyData {
 };
 class TcpServer {
 public:
-    // Khởi tạo server với địa chỉ IP và cổng
-    TcpServer(const std::string& ip, short port);
+    TcpServer(const std::string& ip, short port, Parameter *parameter);
 
-    // Bắt đầu lắng nghe kết nối
     void start_accept();
 
 private:
-    // Phương thức xử lý client sau khi kết nối
+    Parameter *parameter;
+    ParameterAngle *parameterAngle;
     void handle_client(int client_socket);
 
-    int server_fd;  // Socket cho server
-    struct sockaddr_in server_address;  // Địa chỉ của server
+    int server_fd;
+    struct sockaddr_in server_address;
 };
 
-#endif // TCPSERVER_H
+#endif // TCPSERVER_Hs

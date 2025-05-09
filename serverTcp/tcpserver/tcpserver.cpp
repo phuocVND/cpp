@@ -7,9 +7,8 @@
 #include <thread>
 #include <cerrno>
 
-// Hàm gửi mảng
-void send_array(int client_socket, int* arr, size_t size) {
-    ssize_t bytes_sent = send(client_socket, arr, size * sizeof(int), 0);
+void send_array(int client_socket, float* arr, size_t size) {
+    ssize_t bytes_sent = send(client_socket, arr, size * sizeof(float), 0);
     if (bytes_sent == -1) {
         std::cerr << "Error sending array: " << strerror(errno) << std::endl;
     } else {
@@ -17,7 +16,6 @@ void send_array(int client_socket, int* arr, size_t size) {
     }
 }
 
-// Hàm nhận mảng, trả về true nếu thành công, false nếu client ngắt kết nối hoặc lỗi
 bool recv_array(int client_socket, int* arr, size_t size) {
     ssize_t bytes_received = recv(client_socket, arr, size * sizeof(int), 0);
     if (bytes_received > 0) {
@@ -35,7 +33,6 @@ bool recv_array(int client_socket, int* arr, size_t size) {
     }
 }
 
-// Hàm gửi struct
 void send_struct(int client_socket, const MyData& data) {
     ssize_t bytes_sent = send(client_socket, &data, sizeof(data), 0);
     if (bytes_sent == -1) {
@@ -45,7 +42,6 @@ void send_struct(int client_socket, const MyData& data) {
     }
 }
 
-// Hàm nhận struct, trả về true nếu thành công, false nếu client ngắt kết nối hoặc lỗi
 bool recv_struct(int client_socket, MyData& data) {
     ssize_t bytes_received = recv(client_socket, &data, sizeof(data), 0);
     if (bytes_received > 0) {
@@ -63,7 +59,10 @@ bool recv_struct(int client_socket, MyData& data) {
     }
 }
 
-TcpServer::TcpServer(const std::string& ip, short port) {
+TcpServer::TcpServer(const std::string& ip, short port, Parameter *parameter) {
+
+    this->parameter = parameter;
+    parameterAngle = new ParameterAngle;
     server_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (server_fd == -1) {
         std::cerr << "Socket creation failed: " << strerror(errno) << std::endl;
@@ -113,14 +112,12 @@ void TcpServer::start_accept() {
 }
 
 void TcpServer::handle_client(int client_socket) {
-    // Gửi thông điệp chào
     const char* message = "Hello from TCP server!";
     if (send(client_socket, message, strlen(message), 0) == -1) {
         std::cerr << "Error sending welcome message: " << strerror(errno) << std::endl;
         return;
     }
 
-    // Nhận chuỗi từ client
     char buffer[1024];
     ssize_t bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
     if (bytes_received <= 0) {
@@ -130,28 +127,30 @@ void TcpServer::handle_client(int client_socket) {
     buffer[bytes_received] = '\0';
     std::cout << "Received from client: " << buffer << std::endl;
 
-    // Vòng lặp gửi/nhận dữ liệu
     while (true) {
-        // Gửi mảng
-        int arr[5] = {1, 2, 3, 4, 5};
-        send_array(client_socket, arr, 5);
+        if(parameter->isChanged) {
+            parameterAngle = parameter->get_parameter();
+            float arr[5] = {parameterAngle->angle1,
+                            parameterAngle->angle2,
+                            parameterAngle->angle3,
+                            parameterAngle->angle4,
+                            parameterAngle->angle5};
+            send_array(client_socket, arr, 5);
 
-        // Gửi struct
-        MyData data_to_send = {1, 42.42f, "DataStruct"};
-        send_struct(client_socket, data_to_send);
+            MyData data_to_send = {1, 42.42f, "DataStruct"};
+            send_struct(client_socket, data_to_send);
 
-        // Nhận mảng từ client
-        int client_arr[5];
-        if (!recv_array(client_socket, client_arr, 5)) {
-            break; // Thoát nếu client ngắt kết nối hoặc lỗi
+            int client_arr[5];
+            if (!recv_array(client_socket, client_arr, 5)) {
+                break; // Thoát nếu client ngắt kết nối hoặc lỗi
+            }
+
+            MyData client_data;
+            if (!recv_struct(client_socket, client_data)) {
+                break; // Thoát nếu client ngắt kết nối hoặc lỗi
+            }
         }
 
-        // Nhận struct từ client
-        MyData client_data;
-        if (!recv_struct(client_socket, client_data)) {
-            break; // Thoát nếu client ngắt kết nối hoặc lỗi
-        }
     }
-
     std::cout << "Closing client connection" << std::endl;
 }

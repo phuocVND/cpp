@@ -1,18 +1,24 @@
-#include "tcpserver.h"
+#include "parameter.h"
+#include "tcpServer.h"
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QThread>
 #include <iostream>
-#include <ostream>
 #include <string>
+#include <QQmlContext>
+
 
 
 int main(int argc, char *argv[])
 {
     QGuiApplication app(argc, argv);
+    QQmlApplicationEngine engine;
 
-    TcpServer server("127.0.0.1", 8080);
 
+    Parameter* parameter = new Parameter();
+    engine.rootContext()->setContextProperty("parameter", parameter);
+
+    TcpServer server("127.0.0.1", 8080, parameter);
     std::thread serverThread([&server]() {
         server.start_accept();
     });
@@ -20,8 +26,6 @@ int main(int argc, char *argv[])
 
     std::cout << "Main thread is running." << std::endl;
 
-
-    QQmlApplicationEngine engine;
     QObject::connect(
         &engine,
         &QQmlApplicationEngine::objectCreationFailed,

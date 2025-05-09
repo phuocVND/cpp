@@ -1,8 +1,9 @@
 #pragma once
-#include <iostream>
 
-struct parameterAngle
-{
+#include <QtCore/qlist.h>
+#include <QtCore/qobject.h>
+
+struct ParameterAngle {
     float angle1;
     float angle2;
     float angle3;
@@ -11,16 +12,21 @@ struct parameterAngle
     float angle6;
 };
 
-class Parameter
-{
+class Parameter : public QObject {
+    Q_OBJECT
 public:
     Parameter();
     ~Parameter();
-    void set_parameter();
+    Q_INVOKABLE void set_parameter(const QList<double> &values);
+    ParameterAngle* get_parameter();
     bool checkChangedPara();
-private:
     bool isChanged;
-    struct parameterAngle *parameterAngle;
-    struct parameterAngle *parameterSaved;
-};
+signals:
+    void valueChanged();
 
+private:
+
+    void set_parameter_save();
+    ParameterAngle *parameterAngle;
+    ParameterAngle *parameterSaved;
+};

@@ -14,7 +14,7 @@ Window {
         ListElement { name: "4";min: 0; max: 100; val: 50 }
         ListElement { name: "5";min: 0; max: 100; val: 50 }
         ListElement { name: "6";min: 0; max: 100; val: 50 }
-        // thêm phần tử nếu cần
+
     }
     Column {
         spacing: 10
@@ -35,8 +35,27 @@ Window {
                     to: model.max
                     value: model.val
                     width: 200
+                    onValueChanged: {
+
+                        sliderModel.setProperty(index, "val", value);
+                        var values = getSliderValues();
+                        parameter.set_parameter(values);
+                        // console.log("Parameters set:", values);
+                    }
                 }
             }
         }
     }
+
+    // Connections {
+    //     target: parameter
+    // }
+
+    function getSliderValues() {
+            var values = [];
+            for (var i = 0; i < sliderModel.count; i++) {
+                values.push(sliderModel.get(i).val);
+            }
+            return values;
+        }
 }
