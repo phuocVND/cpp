@@ -4,12 +4,12 @@
 #include <QtCore/qobject.h>
 
 struct ParameterAngle {
-    float angle1;
-    float angle2;
-    float angle3;
-    float angle4;
-    float angle5;
-    float angle6;
+    short angle1;
+    short angle2;
+    short angle3;
+    short angle4;
+    short angle5;
+    short angle6;
 };
 
 class Parameter : public QObject {

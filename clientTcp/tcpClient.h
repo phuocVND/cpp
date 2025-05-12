@@ -25,8 +25,8 @@ public:
     void sendMessage(const std::string& message);
     void receiveMessage();
 
-    void sendArray(int* arr, size_t size);
-    void receiveArray(int* arr, size_t size);
+    void sendArray(short* arr, size_t size);
+    void receiveArray(short* arr, size_t size);
 
     void sendStruct(const MyData& data);
     void receiveStruct(MyData& data);

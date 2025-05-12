@@ -14,11 +14,10 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
     QQmlApplicationEngine engine;
 
-
     Parameter* parameter = new Parameter();
     engine.rootContext()->setContextProperty("parameter", parameter);
 
-    TcpServer server("127.0.0.1", 8080, parameter);
+    TcpServer server("0.0.0.0", 8080, parameter);
     std::thread serverThread([&server]() {
         server.start_accept();
     });

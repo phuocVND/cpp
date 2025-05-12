@@ -94,20 +94,20 @@ void TcpClient::receiveMessage() {
     }
 }
 
-void TcpClient::sendArray(int* arr, size_t size) {
+void TcpClient::sendArray(short* arr, size_t size) {
     if (sockfd < 0) return;
 
-    ssize_t sent = send(sockfd, arr, size * sizeof(int), 0);
+    ssize_t sent = send(sockfd, arr, size * sizeof(short), 0);
     if (sent == -1) {
         std::cerr << "Send array failed: " << strerror(errno) << "\n";
         disconnect();
     }
 }
 
-void TcpClient::receiveArray(int* arr, size_t size) {
+void TcpClient::receiveArray(short* arr, size_t size) {
     if (sockfd < 0) return;
 
-    ssize_t bytes_received = recv(sockfd, arr, size * sizeof(int), 0);
+    ssize_t bytes_received = recv(sockfd, arr, size * sizeof(short), 0);
     if (bytes_received > 0) {
         std::cout << "Array received:\n";
         for (size_t i = 0; i < size; ++i) {

@@ -7,8 +7,8 @@
 #include <thread>
 #include <cerrno>
 
-void send_array(int client_socket, float* arr, size_t size) {
-    ssize_t bytes_sent = send(client_socket, arr, size * sizeof(float), 0);
+void send_array(int client_socket, short* arr, size_t size) {
+    ssize_t bytes_sent = send(client_socket, arr, size * sizeof(short), 0);
     if (bytes_sent == -1) {
         std::cerr << "Error sending array: " << strerror(errno) << std::endl;
     } else {
@@ -16,8 +16,8 @@ void send_array(int client_socket, float* arr, size_t size) {
     }
 }
 
-bool recv_array(int client_socket, int* arr, size_t size) {
-    ssize_t bytes_received = recv(client_socket, arr, size * sizeof(int), 0);
+bool recv_array(int client_socket, short* arr, size_t size) {
+    ssize_t bytes_received = recv(client_socket, arr, size * sizeof(short), 0);
     if (bytes_received > 0) {
         std::cout << "Array received successfully!" << std::endl;
         for (size_t i = 0; i < size; ++i) {
@@ -130,27 +130,23 @@ void TcpServer::handle_client(int client_socket) {
     while (true) {
         if(parameter->isChanged) {
             parameterAngle = parameter->get_parameter();
-            float arr[5] = {parameterAngle->angle1,
+            short arr[6] = {parameterAngle->angle1,
                             parameterAngle->angle2,
                             parameterAngle->angle3,
                             parameterAngle->angle4,
-                            parameterAngle->angle5};
-            send_array(client_socket, arr, 5);
+                            parameterAngle->angle5,
+                            parameterAngle->angle6};
 
-            MyData data_to_send = {1, 42.42f, "DataStruct"};
-            send_struct(client_socket, data_to_send);
+            short size = sizeof(arr) / sizeof(arr[0]);
 
-            int client_arr[5];
-            if (!recv_array(client_socket, client_arr, 5)) {
-                break; // Thoát nếu client ngắt kết nối hoặc lỗi
-            }
+            send_array(client_socket, arr, size);
 
-            MyData client_data;
-            if (!recv_struct(client_socket, client_data)) {
+            short client_arr[size];
+            if (!recv_array(client_socket, client_arr, size)) {
                 break; // Thoát nếu client ngắt kết nối hoặc lỗi
             }
         }
-
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
     std::cout << "Closing client connection" << std::endl;
 }
