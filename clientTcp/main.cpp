@@ -1,7 +1,7 @@
 #include "tcpClient.h"
 #include <algorithm>
 int main() {
-    TcpClient client("0.0.0.0", 8080);
+    TcpClient client("0.0.0.0", 1234);
     
     while (!client.connectToServer()) {
         std::cerr << "Retrying connection in 1 second...\n";

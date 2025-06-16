@@ -7,7 +7,8 @@
 #include <algorithm> // Để dùng std::min
 
 #define PORT 8080
-#define SERVER_BUFFER_SIZE 100 // Buffer của server là 100
+#define SERVER_IP "127.0.0.1"
+#define CLIENT_BUFFER_SIZE 50 // Buffer của client là 50
 
 // --- CÁC HÀM TRỢ GIÚP VỚI DEBUG (Không thay đổi) ---
 
@@ -51,7 +52,7 @@ bool receiveMessage(int socket_fd, std::string& outputMessage, int buffer_size) 
     while (total_received < len) {
         int bytes_to_read = std::min((int)(len - total_received), buffer_size);
         std::cout << "DEBUG (receiveMessage): ... Vòng lặp: Sẽ đọc tối đa " << bytes_to_read << " byte." << std::endl;
-        
+
         bytes_received = recv(socket_fd, buffer, bytes_to_read, 0);
 
         if (bytes_received <= 0) { if (bytes_received == 0) { std::cout << "[!] Peer disconnected during data transmission." << std::endl; } else { perror("[-] Failed to receive message data"); } return false; }
@@ -68,52 +69,45 @@ bool receiveMessage(int socket_fd, std::string& outputMessage, int buffer_size) 
     return true;
 }
 
-// --- HÀM MAIN CỦA SERVER ---
+
+// --- HÀM MAIN CỦA CLIENT ---
 
 int main() {
-    int server_fd, client_socket;
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
+    int sock = 0;
+    struct sockaddr_in serv_addr;
 
-    std::cout << "[+] Server starting up..." << std::endl;
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { exit(EXIT_FAILURE); }
+    std::cout << "[+] Client starting up..." << std::endl;
+    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) { return -1; }
+
+    serv_addr.sin_family = AF_INET;
+    serv_addr.sin_port = htons(PORT);
+
+    if (inet_pton(AF_INET, SERVER_IP, &serv_addr.sin_addr) <= 0) { return -1; }
+
+    std::cout << "[+] Connecting to server..." << std::endl;
+    if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) { return -1; }
     
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) { exit(EXIT_FAILURE); }
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) { exit(EXIT_FAILURE); }
-    if (listen(server_fd, 3) < 0) { exit(EXIT_FAILURE); }
-
-    std::cout << "[+] Server is listening on port " << PORT << "." << std::endl;
-
-    if ((client_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen)) < 0) { exit(EXIT_FAILURE); }
+    std::cout << "[+] Connected to server." << std::endl;
     
-    std::cout << "[+] Client connected." << std::endl;
-    std::cout << "\n---------- BƯỚC 1: SERVER NHẬN ----------" << std::endl;
+    std::cout << "\n---------- BƯỚC 1: CLIENT GỬI ----------" << std::endl;
+    
+    // ======================== THAY ĐỔI Ở ĐÂY ========================
+    // Tạo một tin nhắn lớn hơn 300 byte để gửi đi
+    std::string base_message = "This is a data chunk from client. "; // 32 byte
+    std::string message_to_server = "START_OF_CLIENT_MESSAGE | ";
+    while(message_to_server.length() < 300) {
+        message_to_server += base_message;
+    }
+    message_to_server += "END_OF_CLIENT_MESSAGE.";
+    // ===============================================================
 
-    std::string client_message;
-    if (receiveMessage(client_socket, client_message, SERVER_BUFFER_SIZE)) {
-        std::cout << "\n---------- BƯỚC 2: SERVER GỬI ----------" << std::endl;
-        
-        // ======================== THAY ĐỔI Ở ĐÂY ========================
-        // Tạo một tin nhắn hồi đáp lớn hơn 300 byte
-        std::string base_reply = "SERVER-CHUNK | "; // 15 byte
-        std::string server_response = "Acknowledged client message. Now sending a very large reply. ";
-        while(server_response.length() < 300) {
-            server_response += base_reply;
-        }
-        server_response += "END_OF_SERVER_MESSAGE.";
-        // ===============================================================
-
-        sendMessage(client_socket, server_response);
+    if (sendMessage(sock, message_to_server)) {
+        std::cout << "\n---------- BƯỚC 2: CLIENT NHẬN ----------" << std::endl;
+        std::string server_response;
+        receiveMessage(sock, server_response, CLIENT_BUFFER_SIZE);
     }
     
-    close(client_socket);
-    close(server_fd);
-    std::cout << "\n[+] Connection closed. Server shutting down." << std::endl;
-
+    close(sock);
+    std::cout << "\n[+] Connection closed. Client shutting down." << std::endl;
     return 0;
 }
