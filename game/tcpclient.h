@@ -18,7 +18,7 @@ public:
 
     void setFood(Food *myFood);
     void setSnake(SnakeHandle *mySnake);
-
+    bool sendIntArray(const int* data, int count);
 private:
 
     Food *m_myFood;

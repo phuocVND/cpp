@@ -39,6 +39,17 @@ void TCPClient::sendMessage(const std::string &message) {
     std::cout << "Message sent to server: " << message << std::endl;
 }
 
+bool TCPClient::sendIntArray(const int* data, int count) {
+    // Tính toán kích thước của mảng số nguyên
+    int byteSize = count * sizeof(int);
+    std::cout << byteSize << std::endl;
+    // Gửi mảng số nguyên qua socket
+    int sent = send(sock, data, byteSize, 0);
+
+    // Kiểm tra xem số byte đã gửi có đúng với kích thước không
+    return sent == byteSize;
+}
+
 std::string TCPClient::receiveMessage() {
     char buffer[1024] = {0};
     int valread = recv(sock, buffer, sizeof(buffer), 0);
@@ -48,6 +59,7 @@ std::string TCPClient::receiveMessage() {
         return std::string(buffer);
     } else if (valread == 0) {
         std::cerr << "Server đóng kết nối." << std::endl;
+        close(sock);
         return "";
     } else {
         perror("recv lỗi");

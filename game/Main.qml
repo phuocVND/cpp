@@ -75,45 +75,45 @@ Window {
     }
 
 
-    Item {
-       anchors.centerIn: parent
-       width: 200
-       height: 200
+   //  Item {
+   //     anchors.centerIn: parent
+   //     width: 200
+   //     height: 200
 
-       Button {
-           text: "↑"
-           anchors.top: parent.top
-           anchors.horizontalCenter: parent.horizontalCenter
-           onClicked: {
-               Snake.up()
-           }
-       }
+   //     Button {
+   //         text: "↑"
+   //         anchors.top: parent.top
+   //         anchors.horizontalCenter: parent.horizontalCenter
+   //         onClicked: {
+   //             Snake.up()
+   //         }
+   //     }
 
-       Button {
-           text: "↓"
-           anchors.bottom: parent.bottom
-           anchors.horizontalCenter: parent.horizontalCenter
-           onClicked: {
-               Snake.down()
-           }
-       }
+   //     Button {
+   //         text: "↓"
+   //         anchors.bottom: parent.bottom
+   //         anchors.horizontalCenter: parent.horizontalCenter
+   //         onClicked: {
+   //             Snake.down()
+   //         }
+   //     }
 
-       Button {
-           text: "←"
-           anchors.left: parent.left
-           anchors.verticalCenter: parent.verticalCenter
-           onClicked: {
-               Snake.left()
-           }
-       }
+   //     Button {
+   //         text: "←"
+   //         anchors.left: parent.left
+   //         anchors.verticalCenter: parent.verticalCenter
+   //         onClicked: {
+   //             Snake.left()
+   //         }
+   //     }
 
-       Button {
-           text: "→"
-           anchors.right: parent.right
-           anchors.verticalCenter: parent.verticalCenter
-           onClicked: {
-               Snake.right();
-           }
-       }
-   }
+   //     Button {
+   //         text: "→"
+   //         anchors.right: parent.right
+   //         anchors.verticalCenter: parent.verticalCenter
+   //         onClicked: {
+   //             Snake.right();
+   //         }
+   //     }
+   // }
 }
