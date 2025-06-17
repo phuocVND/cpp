@@ -1,119 +1,78 @@
 #include <iostream>
-#include <string>
-#include <vector>
-#include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include <algorithm> // Để dùng std::min
+#include <string.h>
 
-#define PORT 8080
-#define SERVER_BUFFER_SIZE 100 // Buffer của server là 100
-
-// --- CÁC HÀM TRỢ GIÚP VỚI DEBUG (Không thay đổi) ---
-
-bool sendMessage(int socket_fd, const std::string& message) {
-    uint32_t len = message.length();
-    std::cout << "DEBUG (sendMessage): Chuẩn bị gửi thông điệp " << len << " byte." << std::endl;
-    uint32_t net_len = htonl(len);
-
-    std::cout << "DEBUG (sendMessage): ... Gửi độ dài (4 byte)..." << std::endl;
-    if (send(socket_fd, &net_len, sizeof(net_len), 0) < 0) {
-        perror("[-] Failed to send message length");
-        return false;
-    }
-
-    std::cout << "DEBUG (sendMessage): ... Gửi nội dung..." << std::endl;
-    if (send(socket_fd, message.c_str(), len, 0) < 0) {
-        perror("[-] Failed to send message data");
-        return false;
-    }
-    
-    std::cout << "[+] Sent: \"" << message << "\"" << std::endl;
-    return true;
-}
-
-bool receiveMessage(int socket_fd, std::string& outputMessage, int buffer_size) {
-    std::cout << "DEBUG (receiveMessage): Đang chờ nhận độ dài thông điệp (4 byte)..." << std::endl;
-    uint32_t net_len;
-    int bytes_received = recv(socket_fd, &net_len, sizeof(net_len), 0);
-    
-    if (bytes_received <= 0) { if (bytes_received == 0) { std::cout << "[!] Peer disconnected gracefully." << std::endl; } else { perror("[-] Failed to receive message length"); } return false; }
-
-    uint32_t len = ntohl(net_len);
-    std::cout << "DEBUG (receiveMessage): Đã nhận độ dài. Kích thước mong đợi: " << len << " byte." << std::endl;
-
-    outputMessage.clear();
-    outputMessage.reserve(len);
-    char buffer[buffer_size];
-    int total_received = 0;
-
-    std::cout << "DEBUG (receiveMessage): Bắt đầu vòng lặp nhận dữ liệu với buffer size " << buffer_size << "..." << std::endl;
-    while (total_received < len) {
-        int bytes_to_read = std::min((int)(len - total_received), buffer_size);
-        std::cout << "DEBUG (receiveMessage): ... Vòng lặp: Sẽ đọc tối đa " << bytes_to_read << " byte." << std::endl;
-        
-        bytes_received = recv(socket_fd, buffer, bytes_to_read, 0);
-
-        if (bytes_received <= 0) { if (bytes_received == 0) { std::cout << "[!] Peer disconnected during data transmission." << std::endl; } else { perror("[-] Failed to receive message data"); } return false; }
-        
-        std::cout << "DEBUG (receiveMessage): ... Vòng lặp: Thực tế nhận được " << bytes_received << " byte." << std::endl;
-        std::cout << "  >> CHUNK DATA: \"" << std::string(buffer, bytes_received) << "\"" << std::endl;
-
-        outputMessage.append(buffer, bytes_received);
-        total_received += bytes_received;
-    }
-
-    std::cout << "DEBUG (receiveMessage): Đã nhận đủ. Ghép lại thành công." << std::endl;
-    std::cout << "[+] Received: \"" << outputMessage << "\"" << std::endl;
-    return true;
-}
-
-// --- HÀM MAIN CỦA SERVER ---
+#define PORT 1234
+#define BUFFER_SIZE 1024
 
 int main() {
-    int server_fd, client_socket;
-    struct sockaddr_in address;
-    socklen_t addrlen = sizeof(address);
+    int server_socket, client_socket;
+    struct sockaddr_in server_addr, client_addr;
+    socklen_t client_len = sizeof(client_addr);
+    char buffer[BUFFER_SIZE];
 
-    std::cout << "[+] Server starting up..." << std::endl;
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0) { exit(EXIT_FAILURE); }
-    
-    int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) { exit(EXIT_FAILURE); }
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-
-    if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0) { exit(EXIT_FAILURE); }
-    if (listen(server_fd, 3) < 0) { exit(EXIT_FAILURE); }
-
-    std::cout << "[+] Server is listening on port " << PORT << "." << std::endl;
-
-    if ((client_socket = accept(server_fd, (struct sockaddr *)&address, &addrlen)) < 0) { exit(EXIT_FAILURE); }
-    
-    std::cout << "[+] Client connected." << std::endl;
-    std::cout << "\n---------- BƯỚC 1: SERVER NHẬN ----------" << std::endl;
-
-    std::string client_message;
-    if (receiveMessage(client_socket, client_message, SERVER_BUFFER_SIZE)) {
-        std::cout << "\n---------- BƯỚC 2: SERVER GỬI ----------" << std::endl;
-        
-        // ======================== THAY ĐỔI Ở ĐÂY ========================
-        // Tạo một tin nhắn hồi đáp lớn hơn 300 byte
-        std::string base_reply = "SERVER-CHUNK | "; // 15 byte
-        std::string server_response = "Acknowledged client message. Now sending a very large reply. ";
-        while(server_response.length() < 300) {
-            server_response += base_reply;
-        }
-        server_response += "END_OF_SERVER_MESSAGE.";
-        // ===============================================================
-
-        sendMessage(client_socket, server_response);
+    // Tạo socket
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket < 0) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
     }
-    
-    close(client_socket);
-    close(server_fd);
-    std::cout << "\n[+] Connection closed. Server shutting down." << std::endl;
 
+    memset(&server_addr, 0, sizeof(server_addr));
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_addr.s_addr = INADDR_ANY;
+    server_addr.sin_port = htons(PORT);
+
+    // Gắn socket vào địa chỉ và port
+    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
+        perror("bind failed");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    // Lắng nghe kết nối
+    if (listen(server_socket, 5) < 0) {
+        perror("listen failed");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Server listening on port " << PORT << "..." << std::endl;
+
+    // Chấp nhận kết nối từ client
+    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
+    if (client_socket < 0) {
+        perror("accept failed");
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+
+    std::cout << "Client connected!" << std::endl;
+    int sData = 0;
+    recv(client_socket, &sData, sizeof(sData), 0);
+
+    sData = htonl(sData);
+    std::cout << "Received from client: " << sData << std::endl;
+    int total_bytes = 0;
+    char repClient[sData];
+
+    int bytes_received = recv(client_socket, &repClient, sData, 0);
+    if (bytes_received < 0) {
+        perror("recv failed");
+        close(client_socket);
+        close(server_socket);
+        exit(EXIT_FAILURE);
+    }
+    repClient[bytes_received] = '\0';
+
+    std::cout << "Received from client: " << repClient << std::endl;
+
+    // Gửi phản hồi lại client
+    const char* response = "Message received!";
+    send(client_socket, response, strlen(response), 0);
+
+    close(client_socket);
+    close(server_socket);
     return 0;
 }

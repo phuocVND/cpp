@@ -1,15 +1,15 @@
 #pragma once
 
 #include <string>
-#include <sys/socket.h>    // Định nghĩa socket
-#include <arpa/inet.h>     // Định nghĩa in_addr, sockaddr_in
+#include <sys/socket.h>
+#include <arpa/inet.h>
 #include "food.h"
 #include "snakehandle.h"
-// Lớp TCPClient để quản lý kết nối client
+
 class TCPClient {
 public:
-    TCPClient();  // Constructor
-    ~TCPClient(); // Destructor
+    TCPClient();
+    ~TCPClient();
 
     bool connectToServer(const std::string &serverAddress, int port);
     void sendMessage(const std::string &message);
@@ -25,6 +25,6 @@ private:
 
     SnakeHandle *m_mySnake;
 
-    int sock;                // Socket descriptor
-    struct sockaddr_in serverAddr;  // Địa chỉ và cổng server
+    int sock;
+    struct sockaddr_in serverAddr;
 };
