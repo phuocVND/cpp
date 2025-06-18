@@ -35,23 +35,51 @@ bool TCPClient::connectToServer(const std::string &serverAddress, int port) {
 }
 
 void TCPClient::sendMessage(const std::string &message) {
-    send(sock, message.c_str(), message.length(), 0);
-    std::cout << "Message sent to server: " << message << std::endl;
+    std::string msgWithNewline = message;
+    if (!message.empty() && message.back() != '\n')
+        msgWithNewline += '\n';
+
+    send(sock, msgWithNewline.c_str(), msgWithNewline.length(), 0);
+    std::cout << "Message sent to server: " << msgWithNewline << std::endl;
+}
+
+void TCPClient::sendValue(const uint64_t &value) {
+    uint64_t networkValue = htonll(value); // chuyển về big-endian để đảm bảo tương thích mạng
+    int bytesSent = send(sock, &networkValue, sizeof(networkValue), 0);
+
+    if (bytesSent != sizeof(networkValue)) {
+        perror("Lỗi khi gửi dữ liệu (sendValue)");
+    } else {
+        std::cout << "Sent int (binary) to server: " << value << std::endl;
+    }
+}
+
+uint64_t TCPClient::receiveValue() {
+    uint64_t networkValue;
+    ssize_t bytesReceived = recv(sock, &networkValue, sizeof(networkValue), MSG_WAITALL);
+
+    if (bytesReceived != sizeof(networkValue)) {
+        perror("Lỗi khi nhận dữ liệu (receiveValue)");
+        return 0;  // hoặc throw exception nếu bạn dùng
+    }
+
+    uint64_t hostValue = ntohll(networkValue);  // Chuyển ngược lại từ network byte order
+    std::cout << "Received int (binary) from server: " << hostValue << std::endl;
+    return hostValue;
 }
 
 bool TCPClient::sendIntArray(const int* data, int count) {
-    // Tính toán kích thước của mảng số nguyên
+
     int byteSize = count * sizeof(int);
     std::cout << byteSize << std::endl;
-    // Gửi mảng số nguyên qua socket
     int sent = send(sock, data, byteSize, 0);
 
     // Kiểm tra xem số byte đã gửi có đúng với kích thước không
     return sent == byteSize;
 }
 
-std::string TCPClient::receiveMessage() {
-    char buffer[1024] = {0};
+std::string TCPClient::receiveMessage(uint64_t size) {
+    char buffer[size];
     int valread = recv(sock, buffer, sizeof(buffer), 0);
 
     if (valread > 0) {

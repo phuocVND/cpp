@@ -1,6 +1,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
+#include <iostream>
 #include <thread>
 #include "food.h"
 #include "snakehandle.h"
@@ -44,44 +45,33 @@ int main(int argc, char *argv[])
 
     std::atomic<bool> running{true};
 
-    // Tạo thread để chạy TCP giao tiếp
-    std::thread tcpThread([&]() {
-        if (tcpClient->connectToServer("127.0.0.1", 8080)) {
-            qDebug() << "Connected to server (std::thread)";
-            tcpClient->sendMessage("Hello from client!\n");
-            std::string serverResponse = tcpClient->receiveMessage();
+    if (tcpClient->connectToServer("127.0.0.1", 8080)) {
+
+        qDebug() << "Connected to server (std::thread)";
+
+        // tcpClient->sendMessage("Hello from client!");
+
+        // std::string serverResponse = tcpClient->receiveMessage();
+        // qDebug() << "Received: " << QString::fromStdString(serverResponse);
+
+
+        while (running) {
+            std::string message = "555\n";
+            char buffer[1024] = {0};
+
+            tcpClient->sendValue(sizeof(message));
+            tcpClient->sendMessage(message);
+
+            uint64_t sizeData = tcpClient->receiveValue();
+            std::string serverResponse = tcpClient->receiveMessage(sizeData);
             qDebug() << "Received: " << QString::fromStdString(serverResponse);
-            while (running) {
-                // 1. Gửi dữ liệu đi
-                bool check = myFood->xFood() == mySnake->xSnake() && myFood->yFood() == mySnake->ySnake();
-                std::string sendStr = std::to_string(dataSend->xFood = myFood->xFood()) + "," +
-                                      std::to_string(dataSend->yFood = myFood->yFood()) + "," +
-                                      std::to_string(dataSend->xHead = mySnake->xSnake()) + "," +
-                                      std::to_string(dataSend->yHead = mySnake->ySnake())+ "," + std::to_string(check);
 
-                tcpClient->sendMessage(sendStr + "\n");
 
-                // 2. Nhận phản hồi từ server
-                std::string serverResponse = tcpClient->receiveMessage(); // chờ server
-
-                // 3. Xử lý lệnh
-                if (!serverResponse.empty()) {
-                    qDebug() << "Received: " << QString::fromStdString(serverResponse);
-                    switch (serverResponse[0]) {
-                    case 'u': mySnake->up(); break;
-                    case 'd': mySnake->down(); break;
-                    case 'l': mySnake->left(); break;
-                    case 'r': mySnake->right(); break;
-                    default: break;
-                    }
-                }
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(50)); // giúp ổn định vòng lặp
-            }
-        } else {
-            qDebug() << "Failed to connect to server";
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
-    });
+    } else {
+        qDebug() << "Failed to connect to server";
+    }
 
     delete tcpClient;
 
