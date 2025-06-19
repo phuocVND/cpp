@@ -15,7 +15,12 @@ SERVER_PORT = 8080
 BUFFER_SIZE = 8
 WIDTH, HEIGHT = 200.0, 200.0  # Dùng để chuẩn hóa tọa độ
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print("🔥 Using device:", device)
 
+print("CUDA available:", torch.cuda.is_available())
+print("Current device:", torch.cuda.current_device())
+print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 def recv_all(sock, length):
     """Nhận chính xác `length` byte từ socket."""
@@ -43,15 +48,15 @@ def main():
 
     gamma = 0.9
     epsilon = 1.0
-    epsilon_decay = 1.0 - (1.0/100000)
+    epsilon_decay = 1.0 - (1.0/1000)
     min_epsilon = 0.01
     memory = []
 
-    model = DQN(6, 128, 4)
-    target_model = DQN(6, 128, 4)
+    model = DQN(6, 128, 4).to(device)
+    target_model = DQN(6, 128, 4).to(device)
 
     if os.path.exists(MODEL_PATH):
-        checkpoint = torch.load(MODEL_PATH, weights_only=False)
+        checkpoint = torch.load(MODEL_PATH, weights_only=False, map_location=device)
         model.load_state_dict(checkpoint['model'])
         epsilon = checkpoint.get('epsilon', 1.0)
         memory = checkpoint.get('memory', [])

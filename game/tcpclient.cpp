@@ -1,18 +1,53 @@
 #include "tcpclient.h"
 #include <iostream>
-#include <unistd.h>
 #include <cstring>
+#include <vector>
 
-TCPClient::TCPClient() : sock(0) {
+// Định nghĩa htonll & ntohll nếu cần (chỉ định nghĩa nếu chưa có)
+#ifndef _WIN32
+#ifndef htonll
+uint64_t htonll(uint64_t value) {
+    static const int num = 42;
+    if (*(const char*)(&num) == num) { // little endian
+        return ((uint64_t)htonl(value & 0xFFFFFFFF) << 32) | htonl(value >> 32);
+    } else {
+        return value;
+    }
+}
+
+uint64_t ntohll(uint64_t value) {
+    static const int num = 42;
+    if (*(const char*)(&num) == num) { // little endian
+        return ((uint64_t)ntohl(value & 0xFFFFFFFF) << 32) | ntohl(value >> 32);
+    } else {
+        return value;
+    }
+}
+#endif
+#endif
+
+
+TCPClient::TCPClient() : sock(0), m_myFood(nullptr), m_mySnake(nullptr) {
     memset(&serverAddr, 0, sizeof(serverAddr));
+#ifdef _WIN32
+    WSADATA wsaData;
+    int result = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (result != 0) {
+        std::cerr << "WSAStartup failed: " << result << std::endl;
+    }
+#endif
 }
 
 TCPClient::~TCPClient() {
     closeConnection();
+#ifdef _WIN32
+    WSACleanup();
+#endif
 }
 
 bool TCPClient::connectToServer(const std::string &serverAddress, int port) {
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+    sock = socket(AF_INET, SOCK_STREAM, 0);
+    if (sock == INVALID_SOCKET) {
         std::cerr << "Socket creation failed!" << std::endl;
         return false;
     }
@@ -40,72 +75,63 @@ void TCPClient::sendMessage(const std::string &message) {
         msgWithNewline += '\n';
 
     send(sock, msgWithNewline.c_str(), msgWithNewline.length(), 0);
-    // std::cout << "Message sent to server: " << msgWithNewline << std::endl;
 }
 
 void TCPClient::sendValue(const uint64_t &value) {
-    uint64_t networkValue = htonll(value); // chuyển về big-endian để đảm bảo tương thích mạng
-    int bytesSent = send(sock, &networkValue, sizeof(networkValue), 0);
+    uint64_t networkValue = htonll(value);
+    int bytesSent = send(sock, (const char*)&networkValue, sizeof(networkValue), 0);
 
     if (bytesSent != sizeof(networkValue)) {
-        perror("Lỗi khi gửi dữ liệu (sendValue)");
-    } else {
-        // std::cout << "Sent int (binary) to server: " << value << std::endl;
+        std::cerr << "Lỗi khi gửi dữ liệu (sendValue)" << std::endl;
     }
 }
 
 uint64_t TCPClient::receiveValue() {
     uint64_t networkValue;
-    ssize_t bytesReceived = recv(sock, &networkValue, sizeof(networkValue), MSG_WAITALL);
+    int bytesReceived = recv(sock, (char*)&networkValue, sizeof(networkValue), 0);
 
     if (bytesReceived != sizeof(networkValue)) {
-        perror("Lỗi khi nhận dữ liệu (receiveValue)");
-        return 0;  // hoặc throw exception nếu bạn dùng
+        std::cerr << "Lỗi khi nhận dữ liệu (receiveValue)" << std::endl;
+        return 0;
     }
 
-    uint64_t hostValue = ntohll(networkValue);  // Chuyển ngược lại từ network byte order
-    // std::cout << "Received int (binary) from server: " << hostValue << std::endl;
-    return hostValue;
-}
-
-bool TCPClient::sendIntArray(const int* data, int count) {
-
-    int byteSize = count * sizeof(int);
-    // std::cout << byteSize << std::endl;
-    int sent = send(sock, data, byteSize, 0);
-
-    // Kiểm tra xem số byte đã gửi có đúng với kích thước không
-    return sent == byteSize;
+    return ntohll(networkValue);
 }
 
 std::string TCPClient::receiveMessage(uint64_t size) {
-    char buffer[size];
-    int valread = recv(sock, buffer, sizeof(buffer), 0);
+    std::vector<char> buffer(size + 1, 0);
+    int valread = recv(sock, buffer.data(), size, 0);
 
     if (valread > 0) {
-        buffer[valread] = '\0';  // đảm bảo kết thúc chuỗi
-        return std::string(buffer);
+        buffer[valread] = '\0';
+        return std::string(buffer.data());
     } else if (valread == 0) {
         std::cerr << "Server đóng kết nối." << std::endl;
-        close(sock);
+        CLOSE_SOCKET(sock);
         return "";
     } else {
-        perror("recv lỗi");
+        std::cerr << "recv lỗi" << std::endl;
         return "";
     }
+}
+
+bool TCPClient::sendIntArray(const int* data, int count) {
+    int byteSize = count * sizeof(int);
+    int sent = send(sock, (const char*)data, byteSize, 0);
+    return sent == byteSize;
 }
 
 void TCPClient::closeConnection() {
     if (sock != 0) {
-        close(sock);
+        CLOSE_SOCKET(sock);
         std::cout << "Connection closed!" << std::endl;
     }
 }
 
-void TCPClient::setFood(Food *myFood){
+void TCPClient::setFood(Food *myFood) {
     m_myFood = myFood;
 }
 
-void TCPClient::setSnake(SnakeHandle *mySnake){
+void TCPClient::setSnake(SnakeHandle *mySnake) {
     m_mySnake = mySnake;
 }
