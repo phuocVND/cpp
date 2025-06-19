@@ -2,6 +2,17 @@
 
 #include <QRandomGenerator>
 
+void SnakeHandle::handleDirection(char direction)
+{
+    switch (direction) {
+    case 'u': up(); break;
+    case 'd': down(); break;
+    case 'l': left(); break;
+    case 'r': right(); break;
+    default: break;
+    }
+}
+
 SnakeHandle::SnakeHandle(QObject *parent) : QObject(parent), m_xSnake(0), m_ySnake(0)
 {
 

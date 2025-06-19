@@ -37,7 +37,13 @@ def recv_all(sock, length):
             raise ConnectionError("Kết nối bị đóng trước khi nhận đủ dữ liệu.")
         data += more
     return data
-
+def recvValue(client_socket):
+    sizeData = recv_all(client_socket, BUFFER_SIZE) #nhận size
+    sizeData = struct.unpack('!Q', sizeData)[0]
+    return sizeData
+def sendValue(client_socket, sizeData):
+    data = struct.pack("!Q", sizeData)
+    client_socket.sendall(data)
 def main():
 
     # Tạo socket TCP
@@ -55,49 +61,43 @@ def main():
 
             while True:
  
-                sizeData = recv_all(client_socket, BUFFER_SIZE) #nhận size
-                sizeData = struct.unpack('!Q', sizeData)[0]
-                print(f"Size data received: {sizeData}")
-
+                sizeData = recvValue(client_socket) #nhận size
                 data = client_socket.recv(sizeData)
-
                 if not data:
                     break
-
                 print(f"📥 Nhận từ client: {data.decode()}")
 
                 dataSend = b"Phan hoi tu server"
-                sizeData = len(dataSend)
-                data = struct.pack("!Q", sizeData)
-                client_socket.sendall(data)
+                sendValue(client_socket, len(dataSend))
                 client_socket.sendall(dataSend)
 
-                # data = client_socket.recv(sizeData).decode().strip()
-                # if not data:
-                #     break
-                # parts = data.split(',')
-                # xHeadSnack = float(parts[0])
-                # yHeadSnack = float(parts[1])
-                # xFood = float(parts[2])
-                # yFood = float(parts[3])
-                # done = parts[4] == '1'
+                sizeData = recvValue(client_socket) #nhận size  
+                data = client_socket.recv(sizeData).decode().strip()
+                if not data:
+                    break
+                parts = data.split(',')
+                xHeadSnack = float(parts[0])
+                yHeadSnack = float(parts[1])
+                xFood = float(parts[2])
+                yFood = float(parts[3])
+                done = parts[4] == '1'
 
-                # print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done}")
+                print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done}")
 
-                # # Nhập phản hồi từ người dùng
-                # while True:
-                #     # user_input = input("Chọn hướng:\n").strip()
-                #     user_input = "c"
-                #     if user_input:
-                #         break
-                #     print("Không được để trống! Vui lòng nhập lại.")
-                # try:
-                #     client_socket.send(user_input.encode().strip())
-                # except Exception as e:
-                #     print(f"Lỗi khi gửi dữ liệu: {e}")
-                #     client_socket.close()
-                #     break
-
+                while True:
+                    user_input = input("Chọn hướng:\n").strip()
+                    if user_input:
+                        break
+                    print("Không được để trống! Vui lòng nhập lại.")
+                try:
+                    sendValue(client_socket, len(user_input))
+                    dataSend = user_input.encode('utf-8')
+                    client_socket.sendall(dataSend)
+                except Exception as e:
+                    print(f"Lỗi khi gửi dữ liệu: {e}")
+                    client_socket.close()
+                    break
+                # time.sleep(1)
     except KeyboardInterrupt:
         print("\nServer đã dừng.")
     finally:

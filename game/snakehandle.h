@@ -6,6 +6,7 @@ class SnakeHandle : public QObject
     Q_OBJECT
     Q_PROPERTY(int xSnake READ xSnake NOTIFY snakeChanged)
     Q_PROPERTY(int ySnake READ ySnake NOTIFY snakeChanged)
+
 public:
 
     explicit SnakeHandle(QObject *parent = nullptr);
@@ -18,11 +19,11 @@ public:
     Q_INVOKABLE void left();
 
     Q_INVOKABLE void randomizePosition(int maxWidth = 640, int maxHeight = 480);
+    Q_INVOKABLE void handleDirection(char direction);
 
 signals:
     void snakeChanged();
     void snakeReset();
-
 private:
     std::array<int, 4> m_actionOld = {0, 0, 0, 1};
 
