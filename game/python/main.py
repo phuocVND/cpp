@@ -48,7 +48,7 @@ def main():
 
     gamma = 0.9
     epsilon = 1.0
-    epsilon_decay = 1.0 - (1.0/1000)
+    epsilon_decay = 1.0 - (1.0/20000)
     min_epsilon = 0.01
     memory = []
 
