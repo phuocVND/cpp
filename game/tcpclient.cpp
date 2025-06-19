@@ -40,7 +40,7 @@ void TCPClient::sendMessage(const std::string &message) {
         msgWithNewline += '\n';
 
     send(sock, msgWithNewline.c_str(), msgWithNewline.length(), 0);
-    std::cout << "Message sent to server: " << msgWithNewline << std::endl;
+    // std::cout << "Message sent to server: " << msgWithNewline << std::endl;
 }
 
 void TCPClient::sendValue(const uint64_t &value) {
@@ -50,7 +50,7 @@ void TCPClient::sendValue(const uint64_t &value) {
     if (bytesSent != sizeof(networkValue)) {
         perror("Lỗi khi gửi dữ liệu (sendValue)");
     } else {
-        std::cout << "Sent int (binary) to server: " << value << std::endl;
+        // std::cout << "Sent int (binary) to server: " << value << std::endl;
     }
 }
 
@@ -64,14 +64,14 @@ uint64_t TCPClient::receiveValue() {
     }
 
     uint64_t hostValue = ntohll(networkValue);  // Chuyển ngược lại từ network byte order
-    std::cout << "Received int (binary) from server: " << hostValue << std::endl;
+    // std::cout << "Received int (binary) from server: " << hostValue << std::endl;
     return hostValue;
 }
 
 bool TCPClient::sendIntArray(const int* data, int count) {
 
     int byteSize = count * sizeof(int);
-    std::cout << byteSize << std::endl;
+    // std::cout << byteSize << std::endl;
     int sent = send(sock, data, byteSize, 0);
 
     // Kiểm tra xem số byte đã gửi có đúng với kích thước không

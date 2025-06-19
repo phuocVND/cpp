@@ -18,10 +18,6 @@ struct Data{
 void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data *dataSend){
     std::atomic<bool> running{true};
 
-    // if (tcpClient->connectToServer("127.0.0.1", 8080)) {
-
-    //     qDebug() << "Connected to server (std::thread)";
-
         while (running) {
             std::string message = "555\n";
             char buffer[1024] = {0};
@@ -32,13 +28,16 @@ void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data 
 
             uint64_t sizeData = tcpClient->receiveValue();
             std::string serverResponse = tcpClient->receiveMessage(sizeData);
-            qDebug() << "Received: " << QString::fromStdString(serverResponse);
+            // qDebug() << "Received: " << QString::fromStdString(serverResponse);
 
             bool check = myFood->xFood() == mySnake->xSnake() && myFood->yFood() == mySnake->ySnake();
             std::string sendStr = std::to_string(dataSend->xFood = myFood->xFood()) + "," +
                                   std::to_string(dataSend->yFood = myFood->yFood()) + "," +
                                   std::to_string(dataSend->xHead = mySnake->xSnake()) + "," +
-                                  std::to_string(dataSend->yHead = mySnake->ySnake())+ "," + std::to_string(check);
+                                  std::to_string(dataSend->yHead = mySnake->ySnake())+ "," +
+                                  std::to_string(check) + "," +
+                                  std::to_string(mySnake->last_action);
+
             tcpClient->sendValue(sizeof(sendStr));
             tcpClient->sendMessage(sendStr + "\n");
 
@@ -53,12 +52,12 @@ void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data 
                     mySnake->handleDirection(dir);
                 }, Qt::QueuedConnection);
             }
-
-            // std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            if(check == true){
+                myFood->randomizePosition();
+                mySnake->randomizePosition();
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
-    // } else {
-    //     qDebug() << "Failed to connect to server";
-    // }
 }
 
 
@@ -92,7 +91,6 @@ int main(int argc, char *argv[])
     myFood->randomizePosition();
     mySnake->randomizePosition();
 
-    // handlerTcp(myFood, mySnake, tcpClient, dataSend);
     if (tcpClient->connectToServer("127.0.0.1", 8080)) {
 
         qDebug() << "Connected to server (std::thread)";
@@ -102,8 +100,6 @@ int main(int argc, char *argv[])
 
         tcpThread.detach();
     }
-
-
 
     // delete tcpClient;
 

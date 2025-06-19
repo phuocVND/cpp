@@ -1,6 +1,7 @@
 #include "snakehandle.h"
 
 #include <QRandomGenerator>
+#include <iostream>
 
 void SnakeHandle::handleDirection(char direction)
 {
@@ -11,11 +12,12 @@ void SnakeHandle::handleDirection(char direction)
     case 'r': right(); break;
     default: break;
     }
+    // std::cout << "x: " << xSnake() << "\t" << "y: " << ySnake() << std::endl;
 }
 
 SnakeHandle::SnakeHandle(QObject *parent) : QObject(parent), m_xSnake(0), m_ySnake(0)
 {
-
+    last_action = 3;
 }
 
 int SnakeHandle::xSnake() const
@@ -72,13 +74,13 @@ void SnakeHandle::up(){
     }
     m_actionOld = {0, 1, 0, 0};
 
-    if(m_ySnake-10 < 0){
+    if(m_ySnake - 10 < 0){
         setYSnake(m_maxHeight);
     }
     else{
-        setYSnake(m_ySnake-10);
+        setYSnake(m_ySnake - 10);
     }
-
+    last_action = 1;
 }
 void SnakeHandle::down(){
 
@@ -89,12 +91,13 @@ void SnakeHandle::down(){
     }
     m_actionOld = {1, 0, 0, 0};
 
-    if(m_ySnake+10 > m_maxHeight){
+    if(m_ySnake + 10 > m_maxHeight){
         setYSnake(0);
     }
     else{
         setYSnake(m_ySnake+10);
     }
+    last_action = 2;
 }
 void SnakeHandle::right(){
     std::array<int, 4> compareArray = {0, 0, 1, 0};
@@ -110,6 +113,7 @@ void SnakeHandle::right(){
     else{
         setXSnake(m_xSnake+10);
     }
+    last_action = 3;
 }
 void SnakeHandle::left(){
     std::array<int, 4> compareArray = {0, 0, 0, 1};
@@ -125,4 +129,5 @@ void SnakeHandle::left(){
     else{
         setXSnake(m_xSnake-10);
     }
+    last_action = 4;
 }

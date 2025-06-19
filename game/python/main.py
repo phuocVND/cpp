@@ -1,31 +1,20 @@
 from asyncio import sleep
+import os
 import socket
 import struct
 import threading
 import time
 from dqn_module import DQN, select_action, train_step
 import torch.optim as optim
+import numpy as np
+import torch
+MODEL_PATH = "dqn_model.pth"
 
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 8080
 BUFFER_SIZE = 8
+WIDTH, HEIGHT = 200.0, 200.0  # Dùng để chuẩn hóa tọa độ
 
-xHeadSnack = 0
-yHeadSnack = 0
-xFood = 0
-yFood = 0
-done = 0
-
-model = DQN(6, 128, 4)
-target_model = DQN(6, 128, 4)
-target_model.load_state_dict(model.state_dict())
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-gamma = 0.9
-epsilon = 1.0
-epsilon_decay = 0.995
-min_epsilon = 0.01
-memory = []
 
 
 def recv_all(sock, length):
@@ -45,6 +34,34 @@ def sendValue(client_socket, sizeData):
     data = struct.pack("!Q", sizeData)
     client_socket.sendall(data)
 def main():
+    xHeadSnack = 0
+    yHeadSnack = 0
+    xFood = 0
+    yFood = 0
+    done = 0
+    lastAction = 3;
+
+    gamma = 0.9
+    epsilon = 1.0
+    epsilon_decay = 0.99999
+    min_epsilon = 0.01
+    memory = []
+
+    model = DQN(6, 128, 4)
+    target_model = DQN(6, 128, 4)
+
+    if os.path.exists(MODEL_PATH):
+        checkpoint = torch.load(MODEL_PATH)
+        model.load_state_dict(checkpoint['model'])
+        epsilon = checkpoint.get('epsilon', 1.0)
+        memory = checkpoint.get('memory', [])
+        print("✅ Đã load model từ file.")
+    else:
+        print("⚠️ Không tìm thấy file model, khởi tạo model mới.")
+
+    target_model.load_state_dict(model.state_dict())
+    optimizer = optim.Adam(model.parameters(), lr=0.01)
+
 
     # Tạo socket TCP
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -60,12 +77,17 @@ def main():
             print(f"Đã kết nối với client: {client_address}")
 
             while True:
- 
+                torch.save({
+                    'model': model.state_dict(),
+                    'epsilon': epsilon,
+                    'memory': memory
+                }, MODEL_PATH)
+                            
                 sizeData = recvValue(client_socket) #nhận size
                 data = client_socket.recv(sizeData)
                 if not data:
                     break
-                print(f"📥 Nhận từ client: {data.decode()}")
+                # print(f"📥 Nhận từ client: {data.decode()}")
 
                 dataSend = b"Phan hoi tu server"
                 sendValue(client_socket, len(dataSend))
@@ -81,27 +103,80 @@ def main():
                 xFood = float(parts[2])
                 yFood = float(parts[3])
                 done = parts[4] == '1'
+                lastAction = int(parts[5])
+                # print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done, lastAction}")
+                dir_x, dir_y = 0,0;
+                # chuyển thành vector hướng:
+                if lastAction == 1:
+                    dir_x, dir_y = 0, -1  # up
+                elif lastAction == 2:
+                    dir_x, dir_y = 0, 1   # down
+                elif lastAction == 3:
+                    dir_x, dir_y = 1, 0  # right
+                elif lastAction == 4:
+                    dir_x, dir_y = -1, 0   # left
 
-                print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done}")
+                state = np.array([
+                    xHeadSnack / WIDTH,
+                    yHeadSnack / HEIGHT,
+                    xFood / WIDTH,
+                    yFood / HEIGHT,
+                    dir_x,
+                    dir_y
+                ])
+
+                action = select_action(state, epsilon, model)
+                directions = ['u', 'd', 'r', 'l']
+                action_str = directions[action]
+                # print(f"🤖 AI chọn: {action_str}")
 
                 while True:
-                    user_input = input("Chọn hướng:\n").strip()
-                    if user_input:
+                    # user_input = input("Chọn hướng:\n").strip()
+                    ai_input = action_str
+                    if ai_input:
                         break
-                    print("Không được để trống! Vui lòng nhập lại.")
+                    # print("Không được để trống! Vui lòng nhập lại.")
                 try:
-                    sendValue(client_socket, len(user_input))
-                    dataSend = user_input.encode('utf-8')
+                    sendValue(client_socket, len(ai_input))
+                    dataSend = ai_input.encode('utf-8')
                     client_socket.sendall(dataSend)
                 except Exception as e:
-                    print(f"Lỗi khi gửi dữ liệu: {e}")
+                    # print(f"Lỗi khi gửi dữ liệu: {e}")
                     client_socket.close()
                     break
-                # time.sleep(1)
+                
+                # Tạo reward
+                if (lastAction == 1 and action == 1) or \
+                (lastAction == 2 and action == 0) or \
+                (lastAction == 3 and action == 3) or \
+                (lastAction == 4 and action == 2):
+                    reward = -1.0
+                    print(f"epsilon: {epsilon}\n")
+                else:
+                    reward = 1.0 if done else -0.05
+                next_state = state  # đơn giản hóa
+
+                memory.append((state, action, reward, next_state, float(done)))
+                train_step(model, target_model, memory, optimizer, gamma)
+
+                # Giảm epsilon
+                epsilon = max(min_epsilon, epsilon * epsilon_decay)
+                
     except KeyboardInterrupt:
         print("\nServer đã dừng.")
     finally:
-        server_socket.close()
+        try:
+            torch.save({
+                'model': model.state_dict(),
+                'epsilon': epsilon,
+                'memory': memory
+            }, MODEL_PATH)
+            print("💾 Đã lưu model vào file.")
+        except Exception as e:
+            print(f"❌ Lỗi khi lưu model: {e}")
+        finally:
+            server_socket.close()
+            print("🔌 Server đã đóng kết nối.")
 
 
 if __name__ == "__main__":

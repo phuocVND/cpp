@@ -13,7 +13,7 @@ public:
 
     int xFood() const;
     int yFood() const;
-    Q_INVOKABLE void randomizePosition(int maxWidth = 640, int maxHeight = 480);
+    Q_INVOKABLE void randomizePosition(int maxWidth = 200, int maxHeight = 200);
 
 signals:
     void xFoodChanged();

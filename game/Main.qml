@@ -2,8 +2,8 @@ import QtQuick
 import QtQuick.Controls
 Window {
     id: root
-    width: 640
-    height: 480
+    width: 200
+    height: 200
     visible: true
     Rectangle {
         id: foodRect
