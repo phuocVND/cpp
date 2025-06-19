@@ -43,7 +43,7 @@ def main():
 
     gamma = 0.9
     epsilon = 1.0
-    epsilon_decay = 0.99999
+    epsilon_decay = 1.0 - (1.0/100000)
     min_epsilon = 0.01
     memory = []
 
@@ -51,7 +51,7 @@ def main():
     target_model = DQN(6, 128, 4)
 
     if os.path.exists(MODEL_PATH):
-        checkpoint = torch.load(MODEL_PATH)
+        checkpoint = torch.load(MODEL_PATH, weights_only=False)
         model.load_state_dict(checkpoint['model'])
         epsilon = checkpoint.get('epsilon', 1.0)
         memory = checkpoint.get('memory', [])
@@ -151,7 +151,7 @@ def main():
                 (lastAction == 3 and action == 3) or \
                 (lastAction == 4 and action == 2):
                     reward = -1.0
-                    print(f"epsilon: {epsilon}\n")
+                    # print(f"epsilon: {epsilon}\n")
                 else:
                     reward = 1.0 if done else -0.05
                 next_state = state  # đơn giản hóa
