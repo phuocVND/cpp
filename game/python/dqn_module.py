@@ -1,3 +1,5 @@
+# dqn_module.py
+
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -11,11 +13,17 @@ class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(DQN, self).__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.linear2 = nn.Linear(hidden_size, output_size)
+        self.dropout1 = nn.Dropout(p=0.2)  # Dropout với xác suất 20%
+        self.linear2 = nn.Linear(hidden_size, hidden_size)
+        self.dropout2 = nn.Dropout(p=0.2)
+        self.linear3 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         x = torch.relu(self.linear1(x))
-        return self.linear2(x)
+        x = self.dropout1(x)
+        x = torch.relu(self.linear2(x))
+        x = self.dropout2(x)
+        return self.linear3(x)
 
 def select_action(state, epsilon, model):
     if random.random() < epsilon:
@@ -27,10 +35,9 @@ def select_action(state, epsilon, model):
     return torch.argmax(q_values).item()
 
 def train_step(model, target_model, memory, optimizer, gamma):
-    if len(memory) < 100:
+    if len(memory) < 128:
         return
-
-    batch = random.sample(memory, 64)
+    batch = random.sample(memory, 128)
     states, actions, rewards, next_states, dones = zip(*batch)
 
     # Chuyển thành tensor và đưa lên GPU
@@ -43,10 +50,8 @@ def train_step(model, target_model, memory, optimizer, gamma):
     # Q-values cho hành động đã chọn
     q_values = model(states).gather(1, actions.unsqueeze(1)).squeeze()
 
-    # Q-values tối đa từ target_model
-    next_q_values = target_model(next_states).max(1)[0]
-
-    # Tính giá trị mục tiêu
+    next_actions = model(next_states).max(1)[1]
+    next_q_values = target_model(next_states).gather(1, next_actions.unsqueeze(1)).squeeze()
     targets = rewards + gamma * next_q_values * (1 - dones)
 
     # Tính loss và cập nhật

@@ -1,4 +1,5 @@
 from asyncio import sleep
+from collections import deque
 import os
 import socket
 import struct
@@ -19,8 +20,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("🔥 Using device:", device)
 
 print("CUDA available:", torch.cuda.is_available())
-print("Current device:", torch.cuda.current_device())
-print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
+# print("Current device:", torch.cuda.current_device())
+# print("Device name:", torch.cuda.get_device_name(torch.cuda.current_device()))
 
 def recv_all(sock, length):
     """Nhận chính xác `length` byte từ socket."""
@@ -45,12 +46,12 @@ def main():
     yFood = 0
     done = 0
     lastAction = 3;
-
+    learningrate = 0.0001
     gamma = 0.9
     epsilon = 1.0
-    epsilon_decay = 1.0 - (1.0/20000)
+    epsilon_decay = 1.0 - (1.0/100000)
     min_epsilon = 0.01
-    memory = []
+    memory = deque(maxlen=10000)
 
     model = DQN(6, 128, 4).to(device)
     target_model = DQN(6, 128, 4).to(device)
@@ -65,7 +66,7 @@ def main():
         print("⚠️ Không tìm thấy file model, khởi tạo model mới.")
 
     target_model.load_state_dict(model.state_dict())
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
+    optimizer = optim.Adam(model.parameters(), learningrate)
 
 
     # Tạo socket TCP
@@ -155,10 +156,12 @@ def main():
                 (lastAction == 2 and action == 0) or \
                 (lastAction == 3 and action == 3) or \
                 (lastAction == 4 and action == 2):
-                    reward = -1.0
-                    # print(f"epsilon: {epsilon}\n")
+                    reward = -5.0
+                elif    xHeadSnack < 0 or yHeadSnack < 0 or \
+                        xHeadSnack >= WIDTH or yHeadSnack >= HEIGHT:
+                    reward = -5.0  # Va chạm tường
                 else:
-                    reward = 1.0 if done else -0.05
+                    reward = 10.0 if done else -0.1
                 next_state = state  # đơn giản hóa
 
                 memory.append((state, action, reward, next_state, float(done)))

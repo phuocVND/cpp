@@ -47,10 +47,10 @@ TCPClient::~TCPClient() {
 
 bool TCPClient::connectToServer(const std::string &serverAddress, int port) {
     sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == INVALID_SOCKET) {
-        std::cerr << "Socket creation failed!" << std::endl;
-        return false;
-    }
+    // if (sock == INVALID_SOCKET) {
+    //     std::cerr << "Socket creation failed!" << std::endl;
+    //     return false;
+    // }
 
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_port = htons(port);
