@@ -1,2 +1,0 @@
-set(__QT_DEPLOY_TARGET_apptcpserver_FILE /Users/admin/Desktop/tcpserver/build/Qt_6_7_3_for_macOS-Debug/apptcpserver.app/Contents/MacOS/apptcpserver)
-set(__QT_DEPLOY_TARGET_apptcpserver_TYPE EXECUTABLE)

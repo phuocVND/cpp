@@ -80,7 +80,7 @@ void SnakeHandle::up(){
     else{
         setYSnake(m_ySnake - 10);
     }
-    last_action = 1;
+    last_action = 0;
 }
 void SnakeHandle::down(){
 
@@ -97,7 +97,7 @@ void SnakeHandle::down(){
     else{
         setYSnake(m_ySnake+10);
     }
-    last_action = 2;
+    last_action = 1;
 }
 void SnakeHandle::right(){
     std::array<int, 4> compareArray = {0, 0, 1, 0};
@@ -113,7 +113,7 @@ void SnakeHandle::right(){
     else{
         setXSnake(m_xSnake+10);
     }
-    last_action = 3;
+    last_action = 2;
 }
 void SnakeHandle::left(){
     std::array<int, 4> compareArray = {0, 0, 0, 1};
@@ -129,5 +129,5 @@ void SnakeHandle::left(){
     else{
         setXSnake(m_xSnake-10);
     }
-    last_action = 4;
+    last_action = 3;
 }

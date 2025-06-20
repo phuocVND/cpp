@@ -39,7 +39,7 @@ void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data 
                                   std::to_string(mySnake->last_action);
 
             tcpClient->sendValue(sizeof(sendStr));
-            tcpClient->sendMessage(sendStr + "\n");
+            tcpClient->sendMessage(sendStr);
 
             // 2. Nhận phản hồi từ server
             sizeData = tcpClient->receiveValue();

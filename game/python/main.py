@@ -46,10 +46,10 @@ def main():
     yFood = 0
     done = 0
     lastAction = 3;
-    learningrate = 0.0001
+    learningrate = 0.001
     gamma = 0.9
     epsilon = 1.0
-    epsilon_decay = 1.0 - (1.0/100000)
+    epsilon_decay = 1.0 - (1.0/50000)
     min_epsilon = 0.01
     memory = deque(maxlen=10000)
 
@@ -68,7 +68,7 @@ def main():
     target_model.load_state_dict(model.state_dict())
     optimizer = optim.Adam(model.parameters(), learningrate)
 
-
+    print(epsilon)
     # Tạo socket TCP
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind((SERVER_HOST, SERVER_PORT))
@@ -113,13 +113,13 @@ def main():
                 # print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done, lastAction}")
                 dir_x, dir_y = 0,0;
                 # chuyển thành vector hướng:
-                if lastAction == 1:
+                if lastAction == 0:
                     dir_x, dir_y = 0, -1  # up
-                elif lastAction == 2:
+                elif lastAction == 1:
                     dir_x, dir_y = 0, 1   # down
-                elif lastAction == 3:
+                elif lastAction == 2:
                     dir_x, dir_y = 1, 0  # right
-                elif lastAction == 4:
+                elif lastAction == 3:
                     dir_x, dir_y = -1, 0   # left
 
                 state = np.array([
@@ -152,17 +152,46 @@ def main():
                     break
                 
                 # Tạo reward
-                if (lastAction == 1 and action == 1) or \
-                (lastAction == 2 and action == 0) or \
-                (lastAction == 3 and action == 3) or \
-                (lastAction == 4 and action == 2):
+                if (lastAction == 0 and action == 1) or \
+                (lastAction == 1 and action == 0) or \
+                (lastAction == 2 and action == 3) or \
+                (lastAction == 3 and action == 2):
                     reward = -5.0
                 elif    xHeadSnack < 0 or yHeadSnack < 0 or \
                         xHeadSnack >= WIDTH or yHeadSnack >= HEIGHT:
                     reward = -5.0  # Va chạm tường
                 else:
                     reward = 10.0 if done else -0.1
-                next_state = state  # đơn giản hóa
+
+
+
+                head_x, head_y = xHeadSnack, yHeadSnack
+                if action == 0:    # 'u'
+                    head_y -= 10
+                elif action == 1:  # 'd'
+                    head_y += 10
+                elif action == 2:  # 'r'
+                    head_x += 10
+                elif action == 3:  # 'l'
+                    head_x -= 10
+
+                prev_dist = np.linalg.norm([xHeadSnack - xFood, yHeadSnack - yFood])
+                next_dist = np.linalg.norm([head_x - xFood, head_y - yFood])
+
+                if not done:
+                    if next_dist > prev_dist:
+                        reward = -0.3  # đi lùi
+                    else:
+                        reward = -0.1  # đi đúng hướng
+
+                next_state = np.array([
+                    head_x / WIDTH,
+                    head_y / HEIGHT,
+                    xFood / WIDTH,
+                    yFood / HEIGHT,
+                    dir_x,
+                    dir_y
+                ])
 
                 memory.append((state, action, reward, next_state, float(done)))
                 train_step(model, target_model, memory, optimizer, gamma)

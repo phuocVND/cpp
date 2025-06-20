@@ -1,6 +1,0 @@
-<RCC>
-  <qresource prefix="/qt/qml/tcpserver">
-    <file alias="qmldir">/Users/admin/Desktop/tcpserver/build/Qt_6_7_3_for_macOS-Debug/tcpserver/qmldir</file>
-  </qresource>
-</RCC>
-

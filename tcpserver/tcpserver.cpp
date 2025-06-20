@@ -8,7 +8,13 @@
 #include <cerrno>
 
 void send_array(int client_socket, short* arr, size_t size) {
-    ssize_t bytes_sent = send(client_socket, arr, size * sizeof(short), 0);
+    std::vector<short> network_arr(size);
+
+    for (size_t i = 0; i < size; ++i) {
+        network_arr[i] = htons(arr[i]);
+    }
+    ssize_t bytes_sent = send(client_socket, network_arr.data(), size * sizeof(short), 0);
+
     if (bytes_sent == -1) {
         std::cerr << "Error sending array: " << strerror(errno) << std::endl;
     } else {
@@ -17,21 +23,26 @@ void send_array(int client_socket, short* arr, size_t size) {
 }
 
 bool recv_array(int client_socket, short* arr, size_t size) {
-    ssize_t bytes_received = recv(client_socket, arr, size * sizeof(short), 0);
+    std::vector<short> buffer(size); // buffer tạm để nhận dữ liệu thô
+
+    ssize_t bytes_received = recv(client_socket, buffer.data(), size * sizeof(short), 0);
     if (bytes_received > 0) {
-        std::cout << "Array received successfully!" << std::endl;
-        for (size_t i = 0; i < size; ++i) {
+        size_t elements_received = bytes_received / sizeof(short);
+        for (size_t i = 0; i < elements_received; ++i) {
+            arr[i] = ntohs(buffer[i]); // chuyển về host byte order
             std::cout << "arr[" << i << "] = " << arr[i] << std::endl;
         }
+        std::cout << "✅ Array received successfully!" << std::endl;
         return true;
     } else if (bytes_received == 0) {
-        std::cout << "Client disconnected!" << std::endl;
+        std::cout << "⚠️ Client disconnected!" << std::endl;
         return false;
     } else {
-        std::cerr << "Error receiving array: " << strerror(errno) << std::endl;
+        std::cerr << "❌ Error receiving array: " << strerror(errno) << std::endl;
         return false;
     }
 }
+
 
 void send_struct(int client_socket, const MyData& data) {
     ssize_t bytes_sent = send(client_socket, &data, sizeof(data), 0);

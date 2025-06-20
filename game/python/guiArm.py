@@ -7,10 +7,8 @@ p.connect(p.GUI)
 p.setAdditionalSearchPath(pybullet_data.getDataPath())
 p.setGravity(0, 0, -9.81)
 
-# Tải robot Franka Panda
 robot = p.loadURDF("franka_panda/panda.urdf", useFixedBase=True)
 
-# ✅ Chọn 6 khớp chính để điều khiển
 controlled_joints = [0, 1, 2, 3, 4, 5]
 
 # Lưu giới hạn khớp
