@@ -175,6 +175,7 @@ def main():
                     # Reset lại để không học từ kinh nghiệm "vượt game"
                     last_state = None
                     last_action = None
+                    epsilon += 0.1
                 #+ Giảm epsilon sau mỗi bước đi
                 epsilon = max(min_epsilon, epsilon * epsilon_decay)
 
