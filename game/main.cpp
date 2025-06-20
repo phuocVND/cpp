@@ -18,46 +18,50 @@ struct Data{
 void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data *dataSend){
     std::atomic<bool> running{true};
 
-        while (running) {
-            std::string message = "555\n";
-            char buffer[1024] = {0};
+    while (running) {
 
-            tcpClient->sendValue(sizeof(message));
+        uint64_t sizeData;
+        std::string serverResponse;
 
-            tcpClient->sendMessage(message);
-
-            uint64_t sizeData = tcpClient->receiveValue();
-            std::string serverResponse = tcpClient->receiveMessage(sizeData);
-            // qDebug() << "Received: " << QString::fromStdString(serverResponse);
-
-            bool check = myFood->xFood() == mySnake->xSnake() && myFood->yFood() == mySnake->ySnake();
-            std::string sendStr = std::to_string(dataSend->xFood = myFood->xFood()) + "," +
-                                  std::to_string(dataSend->yFood = myFood->yFood()) + "," +
-                                  std::to_string(dataSend->xHead = mySnake->xSnake()) + "," +
-                                  std::to_string(dataSend->yHead = mySnake->ySnake())+ "," +
-                                  std::to_string(check) + "," +
-                                  std::to_string(mySnake->last_action);
-
-            tcpClient->sendValue(sizeof(sendStr));
-            tcpClient->sendMessage(sendStr);
-
-            // 2. Nhận phản hồi từ server
-            sizeData = tcpClient->receiveValue();
-            serverResponse = tcpClient->receiveMessage(sizeData);
-
-            // 3. Xử lý lệnh
-            if (!serverResponse.empty()) {
-                char dir = serverResponse[0];
-                QMetaObject::invokeMethod(mySnake, [=]() {
-                    mySnake->handleDirection(dir);
-                }, Qt::QueuedConnection);
-            }
-            if(check == true){
-                myFood->randomizePosition();
-                mySnake->randomizePosition();
-            }
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if(mySnake->m_checkDead){
+            mySnake->last_action = 3;
         }
+
+
+        bool check = myFood->xFood() == mySnake->xSnake() && myFood->yFood() == mySnake->ySnake();
+        std::string sendStr = std::to_string(dataSend->xHead = mySnake->xSnake()) + "," +
+                              std::to_string(dataSend->yHead = mySnake->ySnake())+ "," +
+                              std::to_string(dataSend->xFood = myFood->xFood()) + "," +
+                              std::to_string(dataSend->yFood = myFood->yFood()) + "," +
+                              std::to_string(check) + "," +
+                              std::to_string(mySnake->last_action) + "," +
+                              std::to_string(mySnake->m_checkDead);
+
+        // std::cout << sendStr << std::endl;
+        tcpClient->sendValue(sizeof(sendStr));
+        tcpClient->sendMessage(sendStr);
+
+        // 2. Nhận phản hồi từ server
+        sizeData = tcpClient->receiveValue();
+        serverResponse = tcpClient->receiveMessage(sizeData);
+
+        // 3. Xử lý lệnh
+        if (!serverResponse.empty()) {
+            char dir = serverResponse[0];
+            QMetaObject::invokeMethod(mySnake, [=]() {
+                mySnake->handleDirection(dir);
+            }, Qt::QueuedConnection);
+        }
+        if(check == true){
+            myFood->randomizePosition();
+        }
+        if(mySnake->m_checkDead){
+            myFood->randomizePosition();
+            mySnake->randomizePosition();
+            mySnake->m_checkDead = 0;
+        }
+        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 }
 
 

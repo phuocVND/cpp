@@ -20,8 +20,8 @@ void Food::randomizePosition(int maxWidth, int maxHeight)
 {
     int gridSize = 10;
 
-    int numCols = maxWidth / gridSize;
-    int numRows = maxHeight / gridSize;
+    int numCols = maxWidth/ gridSize ;
+    int numRows = maxHeight/ gridSize;
 
     int randomCol = QRandomGenerator::global()->bounded(numCols);
     int randomRow = QRandomGenerator::global()->bounded(numRows);

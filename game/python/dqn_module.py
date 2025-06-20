@@ -13,16 +13,12 @@ class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(DQN, self).__init__()
         self.linear1 = nn.Linear(input_size, hidden_size)
-        self.dropout1 = nn.Dropout(p=0.2)  # Dropout với xác suất 20%
         self.linear2 = nn.Linear(hidden_size, hidden_size)
-        self.dropout2 = nn.Dropout(p=0.2)
         self.linear3 = nn.Linear(hidden_size, output_size)
 
     def forward(self, x):
         x = torch.relu(self.linear1(x))
-        x = self.dropout1(x)
         x = torch.relu(self.linear2(x))
-        x = self.dropout2(x)
         return self.linear3(x)
 
 def select_action(state, epsilon, model):
@@ -35,9 +31,9 @@ def select_action(state, epsilon, model):
     return torch.argmax(q_values).item()
 
 def train_step(model, target_model, memory, optimizer, gamma):
-    if len(memory) < 128:
+    if len(memory) < 256:
         return
-    batch = random.sample(memory, 128)
+    batch = random.sample(memory, 256)
     states, actions, rewards, next_states, dones = zip(*batch)
 
     # Chuyển thành tensor và đưa lên GPU
@@ -55,7 +51,7 @@ def train_step(model, target_model, memory, optimizer, gamma):
     targets = rewards + gamma * next_q_values * (1 - dones)
 
     # Tính loss và cập nhật
-    loss = nn.functional.mse_loss(q_values, targets.detach())
+    loss = nn.functional.smooth_l1_loss(q_values, targets.detach())
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()

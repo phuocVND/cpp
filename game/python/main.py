@@ -10,7 +10,7 @@ import torch.optim as optim
 import numpy as np
 import torch
 MODEL_PATH = "dqn_model.pth"
-
+TARGET_UPDATE_FREQUENCY = 10 # Ví dụ: cập nhật sau mỗi 10 ván game
 SERVER_HOST = '127.0.0.1'
 SERVER_PORT = 8080
 BUFFER_SIZE = 8
@@ -46,12 +46,12 @@ def main():
     yFood = 0
     done = 0
     lastAction = 3;
-    learningrate = 0.001
+    learningrate = 0.0001
     gamma = 0.9
     epsilon = 1.0
     epsilon_decay = 1.0 - (1.0/50000)
     min_epsilon = 0.01
-    memory = deque(maxlen=10000)
+    memory = deque(maxlen=100000)
 
     model = DQN(6, 128, 4).to(device)
     target_model = DQN(6, 128, 4).to(device)
@@ -81,24 +81,16 @@ def main():
             client_socket, client_address = server_socket.accept()
 
             print(f"Đã kết nối với client: {client_address}")
-
+            last_state = None
+            last_action = None
+            games_played = 0
             while True:
-                torch.save({
-                    'model': model.state_dict(),
-                    'epsilon': epsilon,
-                    'memory': memory
-                }, MODEL_PATH)
+                # torch.save({
+                #     'model': model.state_dict(),
+                #     'epsilon': epsilon,
+                #     'memory': memory
+                # }, MODEL_PATH)
                             
-                sizeData = recvValue(client_socket) #nhận size
-                data = client_socket.recv(sizeData)
-                if not data:
-                    break
-                # print(f"📥 Nhận từ client: {data.decode()}")
-
-                dataSend = b"Phan hoi tu server"
-                sendValue(client_socket, len(dataSend))
-                client_socket.sendall(dataSend)
-
                 sizeData = recvValue(client_socket) #nhận size  
                 data = client_socket.recv(sizeData).decode().strip()
                 if not data:
@@ -108,10 +100,12 @@ def main():
                 yHeadSnack = float(parts[1])
                 xFood = float(parts[2])
                 yFood = float(parts[3])
-                done = parts[4] == '1'
-                lastAction = int(parts[5])
+                done = parts[4] == '1' # là cờ ăn mồi
+                lastAction = int(parts[5]) #là hướng đi
+                checkDead = parts[6] == '1' # là cờ báo thua
                 # print(f"[Client] gửi: {xHeadSnack, yHeadSnack, xFood, yFood, done, lastAction}")
                 dir_x, dir_y = 0,0;
+
                 # chuyển thành vector hướng:
                 if lastAction == 0:
                     dir_x, dir_y = 0, -1  # up
@@ -122,7 +116,7 @@ def main():
                 elif lastAction == 3:
                     dir_x, dir_y = -1, 0   # left
 
-                state = np.array([
+                current_state = np.array([
                     xHeadSnack / WIDTH,
                     yHeadSnack / HEIGHT,
                     xFood / WIDTH,
@@ -131,74 +125,59 @@ def main():
                     dir_y
                 ])
 
-                action = select_action(state, epsilon, model)
+                if last_state is not None:
+                    if(checkDead): 
+                        reward = -100.0;
+                    elif done:
+                        reward = 50.0
+                    else: 
+                        reward = -0.1
+                    
+                    #+ 2. Lưu kinh nghiệm hoàn chỉnh vào bộ nhớ
+                    #+    (state_cũ, action_cũ, reward_mới, state_mới, cờ_done_mới)
+                    memory.append((last_state, last_action, reward, current_state, float(checkDead)))
+
+                    #+ 3. Huấn luyện model
+                    train_step(model, target_model, memory, optimizer, gamma)
+
+                action = select_action(current_state, epsilon, model)
                 directions = ['u', 'd', 'r', 'l']
                 action_str = directions[action]
                 # print(f"🤖 AI chọn: {action_str}")
-
-                while True:
-                    # user_input = input("Chọn hướng:\n").strip()
-                    ai_input = action_str
-                    if ai_input:
-                        break
-                    # print("Không được để trống! Vui lòng nhập lại.")
                 try:
-                    sendValue(client_socket, len(ai_input))
-                    dataSend = ai_input.encode('utf-8')
+                    sendValue(client_socket, len(action_str))
+                    dataSend = action_str.encode('utf-8')
                     client_socket.sendall(dataSend)
                 except Exception as e:
-                    # print(f"Lỗi khi gửi dữ liệu: {e}")
                     client_socket.close()
                     break
-                
-                # Tạo reward
-                if (lastAction == 0 and action == 1) or \
-                (lastAction == 1 and action == 0) or \
-                (lastAction == 2 and action == 3) or \
-                (lastAction == 3 and action == 2):
-                    reward = -5.0
-                elif    xHeadSnack < 0 or yHeadSnack < 0 or \
-                        xHeadSnack >= WIDTH or yHeadSnack >= HEIGHT:
-                    reward = -5.0  # Va chạm tường
-                else:
-                    reward = 10.0 if done else -0.1
 
 
 
-                head_x, head_y = xHeadSnack, yHeadSnack
-                if action == 0:    # 'u'
-                    head_y -= 10
-                elif action == 1:  # 'd'
-                    head_y += 10
-                elif action == 2:  # 'r'
-                    head_x += 10
-                elif action == 3:  # 'l'
-                    head_x -= 10
 
-                prev_dist = np.linalg.norm([xHeadSnack - xFood, yHeadSnack - yFood])
-                next_dist = np.linalg.norm([head_x - xFood, head_y - yFood])
+                #+ Lưu lại trạng thái và hành động hiện tại để dùng cho vòng lặp tiếp theo
+                last_state = current_state
+                last_action = action
 
-                if not done:
-                    if next_dist > prev_dist:
-                        reward = -0.3  # đi lùi
-                    else:
-                        reward = -0.1  # đi đúng hướng
+                # #+ Xử lý khi game kết thúc
+                # if done:
+                #     print("Game Over. Chuẩn bị ván mới.")
 
-                next_state = np.array([
-                    head_x / WIDTH,
-                    head_y / HEIGHT,
-                    xFood / WIDTH,
-                    yFood / HEIGHT,
-                    dir_x,
-                    dir_y
-                ])
+                if checkDead: # Chỉ xử lý khi thực sự thua
+                    games_played += 1
+                    # print(f"Game Over. Ván thứ {games_played} đã kết thúc. Chuẩn bị ván mới.")
 
-                memory.append((state, action, reward, next_state, float(done)))
-                train_step(model, target_model, memory, optimizer, gamma)
+                    # Cập nhật target network sau mỗi TARGET_UPDATE_FREQUENCY ván
+                    if games_played % TARGET_UPDATE_FREQUENCY == 0:
+                        print(f"🔄 Cập nhật Target Network sau {games_played} ván.")
+                        target_model.load_state_dict(model.state_dict())
 
-                # Giảm epsilon
+                    # Reset lại để không học từ kinh nghiệm "vượt game"
+                    last_state = None
+                    last_action = None
+                #+ Giảm epsilon sau mỗi bước đi
                 epsilon = max(min_epsilon, epsilon * epsilon_decay)
-                
+
     except KeyboardInterrupt:
         print("\nServer đã dừng.")
     finally:

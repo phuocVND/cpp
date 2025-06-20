@@ -21,6 +21,7 @@ public:
     Q_INVOKABLE void randomizePosition(int maxWidth = 200, int maxHeight = 200);
     Q_INVOKABLE void handleDirection(char direction);
     int last_action = 3;
+    bool m_checkDead;
 signals:
     void snakeChanged();
     void snakeReset();

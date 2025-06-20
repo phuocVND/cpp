@@ -18,6 +18,7 @@ void SnakeHandle::handleDirection(char direction)
 SnakeHandle::SnakeHandle(QObject *parent) : QObject(parent), m_xSnake(0), m_ySnake(0)
 {
     last_action = 3;
+    m_checkDead = 0;
 }
 
 int SnakeHandle::xSnake() const
@@ -56,6 +57,7 @@ void SnakeHandle::setXSnake(int x)
         m_xSnake = x;
         emit snakeChanged();
     }
+    // std::cout << "x: " << xSnake() << "\t" << "y: " << ySnake() << std::endl;
 }
 
 void SnakeHandle::setYSnake(int y)
@@ -64,18 +66,20 @@ void SnakeHandle::setYSnake(int y)
         m_ySnake = y;
         emit snakeChanged();
     }
+    // std::cout << "x: " << xSnake() << "\t" << "y: " << ySnake() << std::endl;
 }
 
 void SnakeHandle::up(){
     std::array<int, 4> compareArray = {1, 0, 0, 0};
 
     if(m_actionOld == compareArray){
+        m_checkDead = 1;
         return;
     }
     m_actionOld = {0, 1, 0, 0};
 
     if(m_ySnake - 10 < 0){
-        setYSnake(m_maxHeight);
+        m_checkDead = 1;
     }
     else{
         setYSnake(m_ySnake - 10);
@@ -87,15 +91,16 @@ void SnakeHandle::down(){
     std::array<int, 4> compareArray = {0, 1, 0, 0};
 
     if(m_actionOld == compareArray){
+        m_checkDead = 1;
         return;
     }
     m_actionOld = {1, 0, 0, 0};
 
     if(m_ySnake + 10 > m_maxHeight){
-        setYSnake(0);
+        m_checkDead = 1;
     }
     else{
-        setYSnake(m_ySnake+10);
+        setYSnake(m_ySnake + 10);
     }
     last_action = 1;
 }
@@ -103,12 +108,13 @@ void SnakeHandle::right(){
     std::array<int, 4> compareArray = {0, 0, 1, 0};
 
     if(m_actionOld == compareArray){
+        m_checkDead = 1;
         return;
     }
     m_actionOld = {0, 0, 0, 1};
 
     if(m_xSnake + 10 > m_maxWidth){
-        setXSnake(0);
+        m_checkDead = 1;
     }
     else{
         setXSnake(m_xSnake+10);
@@ -119,12 +125,13 @@ void SnakeHandle::left(){
     std::array<int, 4> compareArray = {0, 0, 0, 1};
 
     if(m_actionOld == compareArray){
+        m_checkDead = 1;
         return;
     }
     m_actionOld = {0, 0, 1, 0};
 
     if(m_xSnake - 10 < 0){
-        setXSnake(m_maxWidth);
+        m_checkDead = 1;
     }
     else{
         setXSnake(m_xSnake-10);
