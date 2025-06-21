@@ -60,7 +60,7 @@ void handlerTcp(Food *myFood, SnakeHandle *mySnake , TCPClient *tcpClient, Data 
             mySnake->randomizePosition();
             mySnake->m_checkDead = 0;
         }
-        // std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
