@@ -1,78 +1,59 @@
+// writer.cpp
 #include <iostream>
-#include <arpa/inet.h>
+#include <fcntl.h>
+#include <sys/mman.h>
 #include <unistd.h>
-#include <string.h>
+#include <cstring>
+#include <mutex>
+#include <pthread.h>
+#include <chrono>
+#include <thread>
+struct DataShared
+{
+    pthread_mutex_t mutex;
+    int shared_int = -1;
+};
 
-#define PORT 1234
-#define BUFFER_SIZE 1024
 
 int main() {
-    int server_socket, client_socket;
-    struct sockaddr_in server_addr, client_addr;
-    socklen_t client_len = sizeof(client_addr);
-    char buffer[BUFFER_SIZE];
+    const char* shm_name = "/my_shared_memory";
+    const size_t SIZE = sizeof(DataShared);
 
-    // Tạo socket
-    server_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_socket < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
+    // Tạo hoặc mở shared memory
+    int shm_fd = shm_open(shm_name, O_CREAT | O_RDWR, 0666);
+    if (shm_fd == -1) {
+        perror("shm_open");
+        return 1;
+    }
+    // Cài đặt kích thước
+    ftruncate(shm_fd, SIZE);
+    // Ánh xạ vào bộ nhớ
+    void* ptr = mmap(0, SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0);
+    if (ptr == MAP_FAILED) {
+        perror("mmap");
+        return 1;
     }
 
-    memset(&server_addr, 0, sizeof(server_addr));
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_addr.s_addr = INADDR_ANY;
-    server_addr.sin_port = htons(PORT);
+    DataShared* data = (DataShared*)ptr;
 
-    // Gắn socket vào địa chỉ và port
-    if (bind(server_socket, (struct sockaddr*)&server_addr, sizeof(server_addr)) < 0) {
-        perror("bind failed");
-        close(server_socket);
-        exit(EXIT_FAILURE);
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    pthread_mutex_init(&data->mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+
+    while (true) {
+        pthread_mutex_lock(&data->mutex);
+        data->shared_int++;
+        std::cout << "Writer: wrote " << data->shared_int << std::endl;
+        pthread_mutex_unlock(&data->mutex);
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
-    // Lắng nghe kết nối
-    if (listen(server_socket, 5) < 0) {
-        perror("listen failed");
-        close(server_socket);
-        exit(EXIT_FAILURE);
-    }
+    std::cout << "Writer: update shared memory.\n";
 
-    std::cout << "Server listening on port " << PORT << "..." << std::endl;
-
-    // Chấp nhận kết nối từ client
-    client_socket = accept(server_socket, (struct sockaddr*)&client_addr, &client_len);
-    if (client_socket < 0) {
-        perror("accept failed");
-        close(server_socket);
-        exit(EXIT_FAILURE);
-    }
-
-    std::cout << "Client connected!" << std::endl;
-    int sData = 0;
-    recv(client_socket, &sData, sizeof(sData), 0);
-
-    sData = htonl(sData);
-    std::cout << "Received from client: " << sData << std::endl;
-    int total_bytes = 0;
-    char repClient[sData];
-
-    int bytes_received = recv(client_socket, &repClient, sData, 0);
-    if (bytes_received < 0) {
-        perror("recv failed");
-        close(client_socket);
-        close(server_socket);
-        exit(EXIT_FAILURE);
-    }
-    repClient[bytes_received] = '\0';
-
-    std::cout << "Received from client: " << repClient << std::endl;
-
-    // Gửi phản hồi lại client
-    const char* response = "Message received!";
-    send(client_socket, response, strlen(response), 0);
-
-    close(client_socket);
-    close(server_socket);
+    // Không xóa shm ở đây!
+    munmap(ptr, SIZE);
+    close(shm_fd);
     return 0;
 }
