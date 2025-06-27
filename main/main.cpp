@@ -56,30 +56,32 @@ int main() {
         std::cerr << "Không mở được camera!\n";
         return 1;
     }
-    cv::Mat frame;
+    pthread_mutex_lock(&data->mutex);
+    {
+        cv::Mat sample;
+        cap >> sample;
+        data->rows = sample.rows;
+        data->cols = sample.cols;
+        data->type = sample.type();
+        data->size = sample.total() * sample.elemSize();
+    }
+    pthread_mutex_unlock(&data->mutex);
+
+    cv::Mat frame(data->rows, data->cols, data->type, data->image);
 
     while (true) {
         cap >> frame;
         if (frame.empty()) continue;
-
+        
         // Ghi vào shared memory có mutex bảo vệ
         pthread_mutex_lock(&data->mutex);
 
-        data->rows = frame.rows;
-        data->cols = frame.cols;
-        data->type = frame.type();
-        data->size = frame.total() * frame.elemSize();
-
         if (data->size <= MAX_IMAGE_SIZE) {
-            std::memcpy(data->image, frame.data, data->size);
             std::cout << "Writer: wrote image (" << data->cols << "x" << data->rows << "), size = " << data->size << " bytes\n";
         } else {
             std::cerr << "Frame quá lớn!\n";
         }
-
         pthread_mutex_unlock(&data->mutex);
-
-        // std::this_thread::sleep_for(std::chrono::milliseconds(30)); // giảm CPU
         if (cv::waitKey(1) == 27) break; // ESC để thoát
     }
 
