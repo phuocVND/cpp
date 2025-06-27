@@ -1,18 +1,23 @@
+# Trình biên dịch và cờ
 CC = g++
-CFLAGS = -Wall -g -std=c++11
+CFLAGS = -Wall -g -std=c++11 `pkg-config --cflags opencv4`
+LDFLAGS = `pkg-config --libs opencv4`
+
+# Tên chương trình
 TARGET = main
 
+# File nguồn và đối tượng
 SRC = main.cpp
 OBJ = $(SRC:.cpp=.o)
 
-# Target 'all' sẽ phụ thuộc vào các target khác
-all:  clean run $(TARGET)
+# Mặc định: build và chạy
+all: clean $(TARGET) run
 
-# Biên dịch và liên kết chương trình
+# Liên kết file object thành chương trình
 $(TARGET): $(OBJ)
-	@$(CC) $(CFLAGS) -o $(TARGET) $(OBJ)
+	@$(CC) $(CFLAGS) -o $(TARGET) $(OBJ) $(LDFLAGS)
 
-# Biên dịch các file .cpp thành file .o
+# Biên dịch từng file .cpp thành .o
 %.o: %.cpp
 	@$(CC) $(CFLAGS) -c $< -o $@
 
