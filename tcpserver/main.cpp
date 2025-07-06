@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     Parameter* parameter = new Parameter();
     engine.rootContext()->setContextProperty("parameter", parameter);
 
-    TcpServer server("0.0.0.0", 12345, parameter);
+    TcpServer server("0.0.0.0", 8888, parameter);
     std::thread serverThread([&server]() {
         server.start_accept();
     });
